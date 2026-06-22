@@ -12,7 +12,7 @@ employees = {
     3: {"name": "Герр В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     
     # Герр Н. не хочет работать с Петровым Д. (ID 10)
-    4: {"name": "Герр Н.", "role": "старший", "wants_with":, "does_not_want_with": [10]},
+    4: {"name": "Герр Н.", "role": "старший", "wants_with": None, "does_not_want_with": [10]},
     5: {"name": "Кестер А.", "role": "старший", "wants_with": 4, "does_not_want_with": None},
     
     # Курган М. не хочет работать с Поповым В. (ID 11)
@@ -34,7 +34,7 @@ employees = {
     13: {"name": "Рощина В.", "role": "оператор", "wants_with": None, "does_not_want_with": [11]},
     14: {"name": "Соколова Ю.", "role": "старший", "wants_with": None, "does_not_want_with": [11]},
     
-    15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with":, "does_not_want_with": None},
+    15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with": None, "does_not_want_with": None},
     16: {"name": "Чернов Г.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     
     # Чубаров С. на постоянной основе не хочет работать с Петровым (10) и Поповым (11)
