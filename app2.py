@@ -121,22 +121,24 @@ def run_distribution():
         required_count = LINE_DEMANDS.get(line_num, 0)
         
         while len(final_distribution[line_num]) < required_count:
+            # Ищем свободных сотрудников
             candidates = [uid for uid in available_ids if uid not in assigned_operators]
             if not candidates:
                 break 
 
+            # Фильтруем кандидатов: убираем тех, кто конфликтует с уже сидящими на этой линии
             filtered_candidates = []
             for uid in candidates:
                 has_conflict = False
                 for assigned_uid in final_distribution[line_num]:
-                    # 1. Проверяем базовые запреты из вашей базы данных
+                    # Проверяем базовые запреты из базы
                     if check_relation(employees[uid]["does_not_want_with"], assigned_uid):
                         has_conflict = True
                         break
                     if check_relation(employees[assigned_uid]["does_not_want_with"], uid):
                         has_conflict = True
                         break
-                    # 2. Проверяем новые запреты, добавленные на сайте мышкой
+                    # Проверяем запреты, добавленные вручную на сайте
                     if (uid, assigned_uid) in site_conflicts or (assigned_uid, uid) in site_conflicts:
                         has_conflict = True
                         break
@@ -144,10 +146,12 @@ def run_distribution():
                 if not has_conflict:
                     filtered_candidates.append(uid)
 
+            # ИСПРАВЛЕНО: Если для этой линии нет идеальных кандидатов, мы переходим к следующей линии, 
+            # но не ломаем внутренний цикл заполнения, если места еще есть.
             if not filtered_candidates:
                 break 
 
-            # Считаем балл полезности кандидата
+            # Считаем балл полезности кандидата (приоритет + бонус за желанного напарника)
             def get_best_score(uid):
                 score = LINE_PRIORITIES[line_num]
                 for assigned_uid in final_distribution[line_num]:
@@ -157,9 +161,11 @@ def run_distribution():
                 return score
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
+            
+            # Берем самого лучшего кандидата из отфильтрованных
             best_candidate = filtered_candidates[0]
             
-            # Логика подтягивания пар (смотрим первого из списка желаемых)
+            # Проверяем его симпатии (напарников)
             wants = employees[best_candidate]["wants_with"]
             partner_id = None
             if wants:
@@ -172,6 +178,7 @@ def run_distribution():
                     if wants in available_ids and wants not in assigned_operators:
                         partner_id = wants
 
+            # Проверяем, можно ли взять напарника прямо сейчас
             can_take_partner = False
             if partner_id and len(final_distribution[line_num]) + 1 < required_count:
                 partner_conflict = False
@@ -190,6 +197,7 @@ def run_distribution():
                 if not partner_conflict:
                     can_take_partner = True
 
+            # Утверждаем сотрудника (или пару) на линию
             if can_take_partner:
                 final_distribution[line_num].append(best_candidate)
                 final_distribution[line_num].append(partner_id)
@@ -200,6 +208,7 @@ def run_distribution():
                 assigned_operators.add(best_candidate)
                 
     return final_distribution, available_ids, assigned_operators
+
 
 # 5. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
 if start_calculation:
