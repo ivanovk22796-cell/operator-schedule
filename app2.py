@@ -1,7 +1,6 @@
 import streamlit as st
-import itertools
 
-# 1. Настройка страницы
+# 1. Настройка страницы (должна идти строго первой в коде)
 st.set_page_config(page_title="Распределение смены", page_icon="📊", layout="wide")
 
 # 2. ВАША ОРИГИНАЛЬНАЯ БАЗА ДАННЫХ
@@ -27,7 +26,6 @@ employees = {
 }
 
 LINE_PRIORITIES = {1: 50, 2: 40, 3: 30, 4: 20, 5: 10}
-
 
 # 3. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ПРОВЕРКИ СВЯЗЕЙ
 def check_relation(relation_value, target_id):
@@ -172,8 +170,14 @@ def run_distribution():
                 return score
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
+            
+            if not filtered_candidates:
+                break
             best_candidate = filtered_candidates
             
+            if best_candidate is None or best_candidate not in employees:
+                break
+
             wants = employees[best_candidate].get("wants_with", None)
             partner_id = None
             if wants:
