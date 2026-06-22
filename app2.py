@@ -171,8 +171,10 @@ def run_distribution():
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
             
+            # ЗАЩИТА: Если список пуст, выходим из цикла до назначения переменной
             if not filtered_candidates:
                 break
+                
             best_candidate = filtered_candidates
             
             if best_candidate is None or best_candidate not in employees:
@@ -219,7 +221,7 @@ def run_distribution():
                 
     return final_distribution, available_ids, assigned_operators
 
-# 6. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
+    # 6. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
 if start_calculation:
     final_dist, av_ids, assigned_ops = run_distribution()
     st.success("🎉 Распределение успешно завершено!")
