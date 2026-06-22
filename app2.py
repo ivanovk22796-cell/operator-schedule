@@ -102,16 +102,32 @@ if st.session_state.conflicts and st.sidebar.button("🗑️ Очистить с
     st.session_state.conflicts = []
     st.rerun()
 
-# Настройка потребности на линиях
+# ==============================================================================
+# НАСТРОЙКА НАЗВАНИЙ И ПОТРЕБНОСТИ НА ЛИНИЯХ
+# ==============================================================================
+# 📝 ВПИШИТЕ СЮДА ВАШИ НОВЫЕ НАЗВАНИЯ ЛИНИЙ В КАВЫЧКАХ:
+LINE_NAMES = {
+    1: "Линия 2-1",
+    2: "Линия 2-2",
+    3: "Линия 2-3",
+    4: "Линия 4-3",
+    5: "Линия 4-4"
+}
+
 st.sidebar.subheader("📈 Потребность на линиях:")
 LINE_DEMANDS = {}
 for line_num in range(1, 6):
+    # Берем красивое название из словаря выше
+    display_name = LINE_NAMES[line_num]
     LINE_DEMANDS[line_num] = st.sidebar.number_input(
-        f"Линия {line_num} (чел.):", 
-        min_value=0, max_value=18, value=3 if line_num <= 4 else 2
+        f"{display_name} (чел.):", 
+        min_value=0, 
+        max_value=18, 
+        value=3 if line_num <= 4 else 2
     )
 
 start_calculation = st.sidebar.button("⚡ Рассчитать график", type="primary")
+
 
 # 5. ЛОГИКА РАСЧЕТА АЛГОРИТМА (С максимальной защитой от ошибок)
 def run_distribution():
@@ -223,7 +239,9 @@ def run_distribution():
     return final_distribution, available_ids, assigned_operators
 
 
-    # 6. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
+  # ==============================================================================
+# 6. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
+# ==============================================================================
 if start_calculation:
     final_dist, av_ids, assigned_ops = run_distribution()
     st.success("🎉 Распределение успешно завершено!")
@@ -234,7 +252,9 @@ if start_calculation:
             req = LINE_DEMANDS.get(line_num, 0)
             actual_count = len(final_dist[line_num])
             
-            st.subheader(f"📍 Линия {line_num}")
+            # Используем новое название линии для заголовка карточки
+            display_name = LINE_NAMES.get(line_num, f"Линия {line_num}")
+            st.subheader(f"📍 {display_name}")
             st.caption(f"План: {actual_count} из {req}")
             
             if final_dist[line_num]:
@@ -269,3 +289,4 @@ if start_calculation:
         st.write("*Все сотрудники распределены по рабочим местам.*")
 else:
     st.info("💡 Нажмите кнопку **«Рассчитать график»** в левой панели, чтобы увидеть результат.")
+
