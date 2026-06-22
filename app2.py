@@ -139,7 +139,7 @@ def run_distribution():
                 return score
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
-            best_candidate = filtered_candidates
+            best_candidate = filtered_candidates[0]
             
             # Логика подтягивания пар (смотрим первого из списка желаемых)
             wants = employees[best_candidate]["wants_with"]
