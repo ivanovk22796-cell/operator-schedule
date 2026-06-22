@@ -41,30 +41,98 @@ for uid, info in employees.items():
     if info["name"] in absent_names:
         ABSENT_EMPLOYEES.append(uid)
 
+
 # ==============================================================================
-# НОВОЕ: ДОБАВЛЕНИЕ ПРИВЛЕЧЕННОГО СОТРУДНИКА
+# 3. ВИЗУАЛЬНЫЙ ИНТЕРФЕЙС САЙТА
 # ==============================================================================
-st.sidebar.subheader("➕ Привлеченный сотрудник")
-external_worker_name = st.sidebar.text_input(
-    "ФИО сотрудника с другого участка:",
+st.title("📊 Автоматическое распределение операторов")
+st.markdown("Настройте параметры дня в левой панели и нажмите кнопку рассчитать.")
+
+st.sidebar.header("⚙️ Настройки на сегодня")
+
+# 1. Базовый список сотрудников (из словаря employees)
+employee_names_list = [info["name"] for uid, info in employees.items()]
+name_to_id = {info["name"]: uid for uid, info in employees.items()}
+
+# 2. Выбор отсутствующих сотрудников
+absent_names = st.sidebar.multiselect(
+    "🏥 Отсутствуют (Отпуск/Больничный):",
+    options=employee_names_list,
+    default=[]
+)
+
+# Вычисляем список ID отсутствующих по их именам
+ABSENT_EMPLOYEES = []
+for uid, info in employees.items():
+    if info["name"] in absent_names:
+        ABSENT_EMPLOYEES.append(uid)
+
+# ==============================================================================
+# ДОБАВЛЕНИЕ ПРИВЛЕЧЕННЫХ СОТРУДНИКОВ (Можно вводить через запятую)
+# ==============================================================================
+st.sidebar.subheader("➕ Привлеченные сотрудники")
+external_workers_input = st.sidebar.text_input(
+    "ФИО сотрудников с другого участка (через запятую):",
     value="",
-    placeholder="Например, Сидоров А."
+    placeholder="Например: Сидоров А., Кузнецов И."
 ).strip()
 
-# Если поле не пустое, динамически регистрируем сотрудника в системе
-external_worker_id = None
-if external_worker_name:
-    external_worker_id = 999  # Выделяем специальный ID для внешнего сотрудника
-    employees[external_worker_id] = {
-        "name": external_worker_name + " (Внеш.)",
-        "role": "оператор",
-        "wants_with": None,
-        "does_not_want_with": None
-    }
+# Если поле не пустое, разбиваем по запятым и регистрируем в системе
+if external_workers_input:
+    # Разделяем строку по запятым и убираем лишние пробелы по краям
+    names = [name.strip() for name in external_workers_input.split(",") if name.strip()]
+    
+    # Даем внешним сотрудникам ID начиная с 900, чтобы они не пересекались с основными
+    for idx, name in enumerate(names):
+        ext_id = 900 + idx
+        employees[ext_id] = {
+            "name": f"{name} (Внеш.)",
+            "role": "оператор",
+            "wants_with": None,
+            "does_not_want_with": None
+        }
+        # Сразу обновляем списки имен, чтобы внешних сотрудников тоже можно было выбрать в запретах
+        if f"{name} (Внеш.)" not in employee_names_list:
+            employee_names_list.append(f"{name} (Внеш.)")
+            name_to_id[f"{name} (Внеш.)"] = ext_id
 # ==============================================================================
 
-# Дополнительные запреты на сайте
+# 3. Дополнительные запреты на сайте
 st.sidebar.subheader("🚫 Дополнительные запреты")
+if "conflicts" not in st.session_state:
+    st.session_state.conflicts = []
+
+if st.sidebar.button("➕ Добавить запрет совместной работы"):
+    st.session_state.conflicts.append({"emp1": employee_names_list, "emp2": employee_names_list})
+
+site_conflicts = []
+for idx in range(len(st.session_state.conflicts)):
+    st.sidebar.markdown(f"**Запрет №{idx+1}**")
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        emp1 = st.selectbox(f"Сотрудник А (пара {idx})", options=employee_names_list, key=f"conf_a_{idx}", label_visibility="collapsed")
+    with col2:
+        emp2 = st.selectbox(f"Не хочет с Б (пара {idx})", options=employee_names_list, key=f"conf_b_{idx}", label_visibility="collapsed")
+    
+    if emp1 != emp2:
+        site_conflicts.append((name_to_id[emp1], name_to_id[emp2]))
+
+if st.session_state.conflicts and st.sidebar.button("🗑️ Очистить созданные запреты"):
+    st.session_state.conflicts = []
+    st.rerun()
+
+# 4. Настройка потребности на линиях
+st.sidebar.subheader("📈 Потребность на линиях:")
+LINE_DEMANDS = {}
+for line_num in range(1, 6):
+    LINE_DEMANDS[line_num] = st.sidebar.number_input(
+        f"Линия {line_num} (чел.):", 
+        min_value=0, 
+        max_value=18, 
+        value=3 if line_num <= 4 else 2
+    )
+
+start_calculation = st.sidebar.button("⚡ Рассчитать график", type="primary")
 
 
 # 4. ЛОГИКА РАСЧЕТА АЛГОРИТМА (Скоростной алгоритм с приоритетом антипатий)
