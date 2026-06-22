@@ -9,7 +9,7 @@ st.set_page_config(page_title="Распределение смены", page_icon
 employees = {
     1: {"name": "Ефимов А.", "role": "оператор", "wants_with": None, "does_not_want_with": None},
     2: {"name": "Богатенков В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
-    3: {"name": "Герр В.", "role": "старший", "wants_with":, "does_not_want_with": None},
+    3: {"name": "Герр В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     
     # Герр Н. не хочет работать с Петровым Д. (ID 10)
     4: {"name": "Герр Н.", "role": "старший", "wants_with":, "does_not_want_with": [10]},
