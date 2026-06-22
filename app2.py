@@ -55,7 +55,7 @@ ABSENT_EMPLOYEES = [name_to_id[name] for name in absent_names]
 
 # ИНТЕРФЕЙС: Динамическое добавление новых запретов (антипатий)
 st.sidebar.subheader("🚫 Дополнительные запреты")
-st.sidebar.markdown("<small>Здесь можно оперативно добавить новые конфликты на сегодня</small>", unsafe_allowed_html=True)
+st.sidebar.markdown("<small>Здесь можно оперативно добавить новые конфликты на сегодня</small>", unsafe_allow_html=True)
 
 if "conflicts" not in st.session_state:
     st.session_state.conflicts = []
