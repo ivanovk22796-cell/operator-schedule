@@ -171,11 +171,12 @@ def run_distribution():
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
             
-            # ЗАЩИТА: Если список пуст, выходим из цикла до назначения переменной
-            if not filtered_candidates:
+            # ЗАЩИТА: Проверяем, что в списке реально кто-то есть
+            if len(filtered_candidates) == 0:
                 break
                 
-            best_candidate = filtered_candidates
+            # ИСПРАВЛЕНО: Берем именно ПЕРВЫЙ элемент из отсортированного списка кандидатов
+            best_candidate = filtered_candidates[0]
             
             if best_candidate is None or best_candidate not in employees:
                 break
@@ -220,6 +221,7 @@ def run_distribution():
                 assigned_operators.add(best_candidate)
                 
     return final_distribution, available_ids, assigned_operators
+
 
     # 6. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
 if start_calculation:
