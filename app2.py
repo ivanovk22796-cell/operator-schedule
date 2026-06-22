@@ -29,34 +29,36 @@ employees = {
 LINE_PRIORITIES = {1: 50, 2: 40, 3: 30, 4: 20, 5: 10}
 
 
-# ==============================================================================
-# 3. ВИЗУАЛЬНЫЙ ИНТЕРФЕЙС САЙТА
-# ==============================================================================
+# 3. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ПРОВЕРКИ СВЯЗЕЙ
+def check_relation(relation_value, target_id):
+    if relation_value is None:
+        return False
+    try:
+        if isinstance(relation_value, list):
+            return target_id in relation_value
+        return relation_value == target_id
+    except:
+        return False
+
+# 4. ВИЗУАЛЬНЫЙ ИНТЕРФЕЙС САЙТА
 st.title("📊 Автоматическое распределение операторов")
 st.markdown("Настройте параметры дня в левой панели и нажмите кнопку рассчитать.")
 
 st.sidebar.header("⚙️ Настройки на сегодня")
 
-# 1. Базовый список сотрудников (из словаря employees)
+# Списки для выпадающих меню
 employee_names_list = [info["name"] for uid, info in employees.items()]
 name_to_id = {info["name"]: uid for uid, info in employees.items()}
 
-# 2. Выбор отсутствующих сотрудников
+# Выбор отсутствующих сотрудников
 absent_names = st.sidebar.multiselect(
     "🏥 Отсутствуют (Отпуск/Больничный):",
     options=employee_names_list,
     default=[]
 )
+ABSENT_EMPLOYEES = [name_to_id[name] for name in absent_names]
 
-# Вычисляем список ID отсутствующих по их именам
-ABSENT_EMPLOYEES = []
-for uid, info in employees.items():
-    if info["name"] in absent_names:
-        ABSENT_EMPLOYEES.append(uid)
-
-# ==============================================================================
 # ДОБАВЛЕНИЕ ПРИВЛЕЧЕННЫХ СОТРУДНИКОВ (Можно вводить через запятую)
-# ==============================================================================
 st.sidebar.subheader("➕ Привлеченные сотрудники")
 external_workers_input = st.sidebar.text_input(
     "ФИО сотрудников с другого участка (через запятую):",
@@ -66,10 +68,7 @@ external_workers_input = st.sidebar.text_input(
 
 # Если поле не пустое, разбиваем по запятым и регистрируем в системе
 if external_workers_input:
-    # Разделяем строку по запятым и убираем лишние пробелы по краям
     names = [name.strip() for name in external_workers_input.split(",") if name.strip()]
-    
-    # Даем внешним сотрудникам ID начиная с 900, чтобы они не пересекались с основными
     for idx, name in enumerate(names):
         ext_id = 900 + idx
         employees[ext_id] = {
@@ -78,13 +77,11 @@ if external_workers_input:
             "wants_with": None,
             "does_not_want_with": None
         }
-        # Сразу обновляем списки имен, чтобы внешних сотрудников тоже можно было выбрать в запретах
         if f"{name} (Внеш.)" not in employee_names_list:
             employee_names_list.append(f"{name} (Внеш.)")
             name_to_id[f"{name} (Внеш.)"] = ext_id
-# ==============================================================================
 
-# 3. Дополнительные запреты на сайте
+# Динамическое добавление новых запретов (антипатий) на сайте
 st.sidebar.subheader("🚫 Дополнительные запреты")
 if "conflicts" not in st.session_state:
     st.session_state.conflicts = []
@@ -100,7 +97,6 @@ for idx in range(len(st.session_state.conflicts)):
         emp1 = st.selectbox(f"Сотрудник А (пара {idx})", options=employee_names_list, key=f"conf_a_{idx}", label_visibility="collapsed")
     with col2:
         emp2 = st.selectbox(f"Не хочет с Б (пара {idx})", options=employee_names_list, key=f"conf_b_{idx}", label_visibility="collapsed")
-    
     if emp1 != emp2:
         site_conflicts.append((name_to_id[emp1], name_to_id[emp2]))
 
@@ -108,31 +104,28 @@ if st.session_state.conflicts and st.sidebar.button("🗑️ Очистить с
     st.session_state.conflicts = []
     st.rerun()
 
-# 4. Настройка потребности на линиях
+# Настройка потребности на линиях
 st.sidebar.subheader("📈 Потребность на линиях:")
 LINE_DEMANDS = {}
 for line_num in range(1, 6):
     LINE_DEMANDS[line_num] = st.sidebar.number_input(
         f"Линия {line_num} (чел.):", 
-        min_value=0, 
-        max_value=18, 
-        value=3 if line_num <= 4 else 2
+        min_value=0, max_value=18, value=3 if line_num <= 4 else 2
     )
 
 start_calculation = st.sidebar.button("⚡ Рассчитать график", type="primary")
 
-
-# 4. ЛОГИКА РАСЧЕТА АЛГОРИТМА (Скоростной алгоритм с приоритетом антипатий)
+# 5. ЛОГИКА РАСЧЕТА АЛГОРИТМА (С максимальной защитой от ошибок)
 def run_distribution():
     available_ids = [uid for uid in employees.keys() if uid not in ABSENT_EMPLOYEES]
     final_distribution = {line: [] for line in range(1, 6)}
     assigned_operators = set()
 
-    # Сортируем ВСЕХ сотрудников по количеству их ограничений.
-    # Те, у кого много запретов, будут распределяться в первую очередь, чтобы им точно хватило места.
     def get_constraint_count(uid):
+        if uid not in employees:
+            return 0
         count = 0
-        dont_want = employees[uid]["does_not_want_with"]
+        dont_want = employees[uid].get("does_not_want_with", None)
         if dont_want:
             if isinstance(dont_want, list):
                 count += len(dont_want)
@@ -140,7 +133,6 @@ def run_distribution():
                 count += 1
         return count
 
-    # Двигаемся строго по приоритетам линий (от 1 до 5)
     for line_num in sorted(LINE_PRIORITIES.keys(), key=lambda x: LINE_PRIORITIES[x], reverse=True):
         required_count = LINE_DEMANDS.get(line_num, 0)
         
@@ -149,67 +141,62 @@ def run_distribution():
             if not candidates:
                 break 
 
-            # Фильтруем кандидатов: убираем тех, кто конфликтует с уже сидящими на этой линии
             filtered_candidates = []
             for uid in candidates:
+                if uid not in employees:
+                    continue
                 has_conflict = False
                 for assigned_uid in final_distribution[line_num]:
-                    if check_relation(employees[uid]["does_not_want_with"], assigned_uid):
+                    if check_relation(employees[uid].get("does_not_want_with", None), assigned_uid):
                         has_conflict = True
                         break
-                    if check_relation(employees[assigned_uid]["does_not_want_with"], uid):
+                    if check_relation(employees.get(assigned_uid, {}).get("does_not_want_with", None), uid):
                         has_conflict = True
                         break
                     if (uid, assigned_uid) in site_conflicts or (assigned_uid, uid) in site_conflicts:
                         has_conflict = True
                         break
-                        
                 if not has_conflict:
                     filtered_candidates.append(uid)
 
             if not filtered_candidates:
                 break 
 
-            # Сортируем кандидатов: сначала берем тех, у кого больше ограничений (чтобы успеть их пристроить),
-            # и добавляем бонус, если на линии есть желанный напарник.
             def get_best_score(uid):
                 score = LINE_PRIORITIES[line_num]
-                # Приоритет «сложным» сотрудникам для рокировки
                 score += get_constraint_count(uid) * 10 
-                # Бонус за напарника
                 for assigned_uid in final_distribution[line_num]:
-                    if check_relation(employees[uid]["wants_with"], assigned_uid):
+                    if check_relation(employees[uid].get("wants_with", None), assigned_uid):
                         score += 25
                         break
                 return score
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
-            best_candidate = filtered_candidates[0]
+            best_candidate = filtered_candidates
             
-            # Логика подтягивания пар (напарников)
-            wants = employees[best_candidate]["wants_with"]
+            wants = employees[best_candidate].get("wants_with", None)
             partner_id = None
             if wants:
                 if isinstance(wants, list):
                     for p_id in wants:
-                        if p_id in available_ids and p_id not in assigned_operators:
+                        if p_id in employees and p_id in available_ids and p_id not in assigned_operators:
                             partner_id = p_id
                             break
                 else:
-                    if wants in available_ids and wants not in assigned_operators:
+                    if wants in employees and wants in available_ids and wants not in assigned_operators:
                         partner_id = wants
 
             can_take_partner = False
-            if partner_id and len(final_distribution[line_num]) + 1 < required_count:
+            if partner_id and partner_id in employees and len(final_distribution[line_num]) + 1 < required_count:
                 partner_conflict = False
                 for assigned_uid in final_distribution[line_num]:
-                    if check_relation(employees[partner_id]["does_not_want_with"], assigned_uid) or check_relation(employees[assigned_uid]["does_not_want_with"], partner_id):
+                    if check_relation(employees[partner_id].get("does_not_want_with", None), assigned_uid) or check_relation(employees.get(assigned_uid, {}).get("does_not_want_with", None), partner_id):
                         partner_conflict = True
                         break
                     if (partner_id, assigned_uid) in site_conflicts or (assigned_uid, partner_id) in site_conflicts:
                         partner_conflict = True
                         break
-                if check_relation(employees[partner_id]["does_not_want_with"], best_candidate) or check_relation(employees[best_candidate]["does_not_want_with"], partner_id):
+                if check_relation(employees[partner_id].get("does_not_want_with", None), best_candidate) or check_relation(employees[best_candidate].get("does_not_want_with", None), partner_id):
                     partner_conflict = True
                 if (partner_id, best_candidate) in site_conflicts or (best_candidate, partner_id) in site_conflicts:
                     partner_conflict = True
@@ -228,7 +215,7 @@ def run_distribution():
                 
     return final_distribution, available_ids, assigned_operators
 
-# 5. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
+# 6. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
 if start_calculation:
     final_dist, av_ids, assigned_ops = run_distribution()
     st.success("🎉 Распределение успешно завершено!")
@@ -274,4 +261,3 @@ if start_calculation:
         st.write("*Все сотрудники распределены по рабочим местам.*")
 else:
     st.info("💡 Нажмите кнопку **«Рассчитать график»** в левой панели, чтобы увидеть результат.")
-
