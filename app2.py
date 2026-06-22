@@ -3,12 +3,12 @@ import streamlit as st
 # 1. Настройка страницы (должна идти строго первой в коде)
 st.set_page_config(page_title="Распределение смены", page_icon="📊", layout="wide")
 
-# 2. ВАША ОРИГИНАЛЬНАЯ БАЗА ДАННЫХ (С поддержкой списков напарников и запретов)
+# 2. ВАША ОРИГИНАЛЬНАЯ БАЗА ДАННЫХ (Все списки восстановлены)
 employees = {
     1: {"name": "Ефимов А.", "role": "оператор", "wants_with": None, "does_not_want_with": None},
     2: {"name": "Богатенков В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
-    3: {"name": "Герр В.", "role": "старший", "wants_with":, "does_not_want_with": None},
-    4: {"name": "Герр Н.", "role": "старший", "wants_with":, "does_not_want_with": 10},
+    3: {"name": "Герр В.", "role": "старший", "wants_with": [4, 12, 15], "does_not_want_with": None},
+    4: {"name": "Герр Н.", "role": "старший", "wants_with": [3, 12, 15], "does_not_want_with": 10},
     5: {"name": "Кестер А.", "role": "старший", "wants_with": 4, "does_not_want_with": None},
     6: {"name": "Курган М.", "role": "старший", "wants_with": None, "does_not_want_with": 11},
     7: {"name": "Мазепа С.", "role": "старший", "wants_with": None, "does_not_want_with": None},
@@ -19,7 +19,7 @@ employees = {
     12: {"name": "Романкин П.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     13: {"name": "Рощина В.", "role": "оператор", "wants_with": None, "does_not_want_with": 11},
     14: {"name": "Соколова Ю.", "role": "старший", "wants_with": None, "does_not_want_with": 11},
-    15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with":, "does_not_want_with": None},
+    15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with": [4, 3, 12], "does_not_want_with": None},
     16: {"name": "Чернов Г.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     17: {"name": "Чубаров С.", "role": "оператор", "wants_with": 18, "does_not_want_with": [10, 11]},
     18: {"name": "Загуменнов Д.", "role": "оператор", "wants_with": 17, "does_not_want_with": None}
@@ -27,7 +27,7 @@ employees = {
 
 LINE_PRIORITIES = {1: 50, 2: 40, 3: 30, 4: 20, 5: 10}
 
-# Вспомогательная функция для проверки связей (работает и с числами, и со списками)
+# Вспомогательная функция для проверки связей
 def check_relation(relation_value, target_id):
     if relation_value is None:
         return False
@@ -61,7 +61,7 @@ if "conflicts" not in st.session_state:
     st.session_state.conflicts = []
 
 if st.sidebar.button("➕ Добавить запрет совместной работы"):
-    st.session_state.conflicts.append({"emp1": employee_names_list[0], "emp2": employee_names_list[0]})
+    st.session_state.conflicts.append({"emp1": employee_names_list, "emp2": employee_names_list})
 
 # Сбор добавленных на сайте запретов
 site_conflicts = []
@@ -69,9 +69,9 @@ for idx in range(len(st.session_state.conflicts)):
     st.sidebar.markdown(f"**Запрет №{idx+1}**")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        emp1 = st.selectbox(f"Сотрудник А", options=employee_names_list, key=f"conf_a_{idx}", label_visibility="collapsed")
+        emp1 = st.selectbox(f"Сотрудник А (пара {idx})", options=employee_names_list, key=f"conf_a_{idx}", label_visibility="collapsed")
     with col2:
-        emp2 = st.selectbox(f"Не хочет с Б", options=employee_names_list, key=f"conf_b_{idx}", label_visibility="collapsed")
+        emp2 = st.selectbox(f"Не хочет с Б (пара {idx})", options=employee_names_list, key=f"conf_b_{idx}", label_visibility="collapsed")
     
     if emp1 != emp2:
         site_conflicts.append((name_to_id[emp1], name_to_id[emp2]))
@@ -111,7 +111,7 @@ def run_distribution():
             for uid in candidates:
                 has_conflict = False
                 for assigned_uid in final_distribution[line_num]:
-                    # 1. Проверяем базовые запреты из базы данных (из вашего кода)
+                    # 1. Проверяем базовые запреты из вашей базы данных
                     if check_relation(employees[uid]["does_not_want_with"], assigned_uid):
                         has_conflict = True
                         break
@@ -132,7 +132,6 @@ def run_distribution():
             # Считаем балл полезности кандидата
             def get_best_score(uid):
                 score = LINE_PRIORITIES[line_num]
-                # Начисляем бонус, если в этой линии уже сидит кто-то, с кем кандидат ХОЧЕТ работать
                 for assigned_uid in final_distribution[line_num]:
                     if check_relation(employees[uid]["wants_with"], assigned_uid):
                         score += 25
@@ -140,13 +139,12 @@ def run_distribution():
                 return score
 
             filtered_candidates.sort(key=get_best_score, reverse=True)
-            best_candidate = filtered_candidates[0]
+            best_candidate = filtered_candidates
             
             # Логика подтягивания пар (смотрим первого из списка желаемых)
             wants = employees[best_candidate]["wants_with"]
             partner_id = None
             if wants:
-                # Если это список желаемых, берем первого, кто свободен
                 if isinstance(wants, list):
                     for p_id in wants:
                         if p_id in available_ids and p_id not in assigned_operators:
@@ -184,6 +182,7 @@ def run_distribution():
                 assigned_operators.add(best_candidate)
                 
     return final_distribution, available_ids, assigned_operators
+
 # 5. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
 if start_calculation:
     final_dist, av_ids, assigned_ops = run_distribution()
