@@ -9,17 +9,17 @@ st.set_page_config(page_title="Распределение смены", page_icon
 employees = {
     1: {"name": "Ефимов А.", "role": "оператор", "wants_with": None, "does_not_want_with": None},
     2: {"name": "Богатенков В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
-    3: {"name": "Герр В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
+    3: {"name": "Герр В.", "role": "старший", "wants_with": [4, 12, 15], "does_not_want_with": None},
     
     # Герр Н. не хочет работать с Петровым Д. (ID 10)
-    4: {"name": "Герр Н.", "role": "старший", "wants_with": None, "does_not_want_with": [10]},
+    4: {"name": "Герр Н.", "role": "старший", "wants_with": [3, 12,15], "does_not_want_with": [10]},
     5: {"name": "Кестер А.", "role": "старший", "wants_with": 4, "does_not_want_with": None},
     
     # Курган М. не хочет работать с Поповым В. (ID 11)
     6: {"name": "Курган М.", "role": "старший", "wants_with": None, "does_not_want_with": [11]},
     
-    7: {"name": "Мазепа С.", "role": "старший", "wants_with": None, "does_not_want_with": None},
-    8: {"name": "Пашков Б.", "role": "старший", "wants_with": None, "does_not_want_with": None},
+    7: {"name": "Мазепа С.", "role": "старший", "wants_with": 8, "does_not_want_with": None},
+    8: {"name": "Пашков Б.", "role": "старший", "wants_with": 7, "does_not_want_with": None},
     9: {"name": "Пегова О.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     
     # Петров Д. не хочет работать с Герр Н. (ID 4)
@@ -28,13 +28,13 @@ employees = {
     # Попов В. не хочет работать сам с собой? (В коде стояло 10 - Петров Д.)
     11: {"name": "Попов В.", "role": "старший", "wants_with": 10, "does_not_want_with": [10]},
     
-    12: {"name": "Романкин П.", "role": "старший", "wants_with": None, "does_not_want_with": None},
+    12: {"name": "Романкин П.", "role": "старший", "wants_with": [3, 4, 15], "does_not_want_with": None},
     
     # Рощина В. и Соколова Ю. не хотят работать с Поповым В. (ID 11)
     13: {"name": "Рощина В.", "role": "оператор", "wants_with": None, "does_not_want_with": [11]},
     14: {"name": "Соколова Ю.", "role": "старший", "wants_with": None, "does_not_want_with": [11]},
     
-    15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with": None, "does_not_want_with": None},
+    15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with": [3, 4, 12], "does_not_want_with": None},
     16: {"name": "Чернов Г.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     
     # Чубаров С. на постоянной основе не хочет работать с Петровым (10) и Поповым (11)
