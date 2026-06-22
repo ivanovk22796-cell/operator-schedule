@@ -49,7 +49,7 @@ st.markdown("Настройте параметры дня в левой пане
 st.sidebar.header("⚙️ Настройки на сегодня")
 
 # 1. Выбор отсутствующих сотрудников
-all_emp_options = {uid: info["name"] for uid in employees.items()}
+all_emp_options = {uid: info["name"] for uid, info in employees.items()}
 absent_names = st.sidebar.multiselect(
     "🏥 Отсутствуют (Отпуск/Больничный):",
     options=list(all_emp_options.values()),
