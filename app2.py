@@ -10,20 +10,20 @@ employees = {
     2: {"name": "Богатенков В.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     3: {"name": "Герр В.", "role": "старший", "wants_with": [4, 12, 15], "does_not_want_with": None},
     4: {"name": "Герр Н.", "role": "старший", "wants_with": [3, 12,15], "does_not_want_with": [10]},
-    5: {"name": "Кестер А.", "role": "старший", "wants_with": 4, "does_not_want_with": None},
+    5: {"name": "Кестер А.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     6: {"name": "Курган М.", "role": "старший", "wants_with": None, "does_not_want_with": [11]},
     7: {"name": "Мазепа С.", "role": "старший", "wants_with": 8, "does_not_want_with": None},
     8: {"name": "Пашков Б.", "role": "старший", "wants_with": 7, "does_not_want_with": None},
     9: {"name": "Пегова О.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     10: {"name": "Петров Д.", "role": "оператор", "wants_with": None, "does_not_want_with": [4]},
-    11: {"name": "Попов В.", "role": "старший", "wants_with": 10, "does_not_want_with": [10]},
+    11: {"name": "Попов В.", "role": "старший", "wants_with": None, "does_not_want_with": [10]},
     12: {"name": "Романкин П.", "role": "старший", "wants_with": [3, 4, 15], "does_not_want_with": None},
     13: {"name": "Рощина В.", "role": "оператор", "wants_with": None, "does_not_want_with": [11]},
     14: {"name": "Соколова Ю.", "role": "старший", "wants_with": None, "does_not_want_with": [11]},
     15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with": [3, 4, 12], "does_not_want_with": None},
     16: {"name": "Чернов Г.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     17: {"name": "Чубаров С.", "role": "оператор", "wants_with": 18, "does_not_want_with": [10, 11]},
-    18: {"name": "Загуменнов Д.", "role": "оператор", "wants_with": 17, "does_not_want_with": None}
+    #18: {"name": "Загуменнов Д.", "role": "оператор", "wants_with": 17, "does_not_want_with": None}
 }
 
 LINE_PRIORITIES = {1: 50, 2: 40, 3: 30, 4: 20, 5: 10}
