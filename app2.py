@@ -84,105 +84,118 @@ for line_num in range(1, 6):
 
 start_calculation = st.sidebar.button("⚡ Рассчитать график", type="primary")
 
-# 4.ГЛОБАЛЬНЫЙ КОМБИНАТОРНЫЙ АЛГОРИТМ (Многошаговый поиск рокировок)
-def run_smart_distribution():
+# 4. ЛОГИКА РАСЧЕТА АЛГОРИТМА (Скоростной алгоритм с приоритетом антипатий)
+def run_distribution():
     available_ids = [uid for uid in employees.keys() if uid not in ABSENT_EMPLOYEES]
-    
-    # Считаем суммарное количество мест, которое нужно заполнить
-    total_slots_needed = sum(LINE_DEMANDS.values())
-    
-    # Если требуемых мест больше, чем людей на работе, берем сколько есть
-    slots_to_fill = min(total_slots_needed, len(available_ids))
-    
-    best_global_score = -100000
-    best_global_assignment = None
-
-    # Шаг 1: Отбираем базовую группу людей, максимизируя их полезность и синергию пар
-    # Чтобы не перебирать все миллионы комбинаций, сначала отранжируем кандидатов по базовой ценности
-    def get_individual_worth(uid):
-        worth = 0
-        wants = employees[uid]["wants_with"]
-        if wants:
-            if isinstance(wants, list):
-                worth += len(wants) * 5
-            else:
-                worth += 5
-        return worth
-
-    available_ids.sort(key=get_individual_worth, reverse=True)
-    
-    # Берем с небольшим запасом для поиска лучших рокировок
-    subset_size = min(slots_to_fill + 4, len(available_ids))
-    pool_for_combination = available_ids[:subset_size]
-
-    # Шаг 2: Ищем наилучшее подмножество людей и их идеальную расстановку по линиям
-    for workers_combo in itertools.combinations(pool_for_combination, slots_to_fill):
-        # Строим распределение по линиям для данной комбинации сотрудников
-        current_workers = list(workers_combo)
-        
-        # Формируем структуру линий под требования дневного плана
-        line_slots = []
-        for line_id, count in LINE_DEMANDS.items():
-            for _ in range(count):
-                if len(line_slots) < slots_to_fill:
-                    line_slots.append(line_id)
-
-        # Перебираем варианты размещения этих конкретных людей по позициям линий
-        for p in itertools.permutations(current_workers):
-            # Строим тестовый вариант расписания
-            temp_dist = {l: [] for l in range(1, 6)}
-            for worker_id, line_id in zip(p, line_slots):
-                temp_dist[line_id].append(worker_id)
-                
-            # Проверяем жесткие ограничения (Конфликты и Антипатии)
-            has_fatal_conflict = False
-            for line_id, workers_on_line in temp_dist.items():
-                for w1, w2 in itertools.combinations(workers_on_line, 2):
-                    if check_relation(employees[w1]["does_not_want_with"], w2) or check_relation(employees[w2]["does_not_want_with"], w1):
-                        has_fatal_conflict = True
-                        break
-                    if (w1, w2) in site_conflicts or (w2, w1) in site_conflicts:
-                        has_conflict = True
-                        has_fatal_conflict = True
-                        break
-                if has_fatal_conflict:
-                    break
-                    
-            if has_fatal_conflict:
-                continue # Эту комбинацию использовать нельзя, пропускаем её
-
-            # Если конфликтов нет, оцениваем качество (баллы за приоритеты линий и за напарников)
-            current_score = 0
-            for line_id, workers_on_line in temp_dist.items():
-                # Баллы за приоритет линии
-                current_score += len(workers_on_line) * LINE_PRIORITIES[line_id]
-                # Баллы за успешное нахождение желанных пар на одной линии
-                for w1 in workers_on_line:
-                    for w2 in workers_on_line:
-                        if w1 != w2 and check_relation(employees[w1]["wants_with"], w2):
-                            current_score += 30 # Серьезный бонус за синергию
-
-            # Если это распределение лучше всех предыдущих — запоминаем его
-            if current_score > best_global_score:
-                best_global_score = current_score
-                best_global_assignment = temp_dist
-
-    # Если идеальное бесконфликтное решение среди подмножества не найдено, запускаем базовый отказоустойчивый добор
-    if best_global_assignment is None:
-        return {l: [] for l in range(1, 6)}, available_ids, set()
-
+    final_distribution = {line: [] for line in range(1, 6)}
     assigned_operators = set()
-    for line_id, workers in best_global_assignment.items():
-        for w in workers:
-            assigned_operators.add(w)
 
-    return best_global_assignment, available_ids, assigned_operators
+    # Сортируем ВСЕХ сотрудников по количеству их ограничений.
+    # Те, у кого много запретов, будут распределяться в первую очередь, чтобы им точно хватило места.
+    def get_constraint_count(uid):
+        count = 0
+        dont_want = employees[uid]["does_not_want_with"]
+        if dont_want:
+            if isinstance(dont_want, list):
+                count += len(dont_want)
+            else:
+                count += 1
+        return count
+
+    # Двигаемся строго по приоритетам линий (от 1 до 5)
+    for line_num in sorted(LINE_PRIORITIES.keys(), key=lambda x: LINE_PRIORITIES[x], reverse=True):
+        required_count = LINE_DEMANDS.get(line_num, 0)
+        
+        while len(final_distribution[line_num]) < required_count:
+            candidates = [uid for uid in available_ids if uid not in assigned_operators]
+            if not candidates:
+                break 
+
+            # Фильтруем кандидатов: убираем тех, кто конфликтует с уже сидящими на этой линии
+            filtered_candidates = []
+            for uid in candidates:
+                has_conflict = False
+                for assigned_uid in final_distribution[line_num]:
+                    if check_relation(employees[uid]["does_not_want_with"], assigned_uid):
+                        has_conflict = True
+                        break
+                    if check_relation(employees[assigned_uid]["does_not_want_with"], uid):
+                        has_conflict = True
+                        break
+                    if (uid, assigned_uid) in site_conflicts or (assigned_uid, uid) in site_conflicts:
+                        has_conflict = True
+                        break
+                        
+                if not has_conflict:
+                    filtered_candidates.append(uid)
+
+            if not filtered_candidates:
+                break 
+
+            # Сортируем кандидатов: сначала берем тех, у кого больше ограничений (чтобы успеть их пристроить),
+            # и добавляем бонус, если на линии есть желанный напарник.
+            def get_best_score(uid):
+                score = LINE_PRIORITIES[line_num]
+                # Приоритет «сложным» сотрудникам для рокировки
+                score += get_constraint_count(uid) * 10 
+                # Бонус за напарника
+                for assigned_uid in final_distribution[line_num]:
+                    if check_relation(employees[uid]["wants_with"], assigned_uid):
+                        score += 25
+                        break
+                return score
+
+            filtered_candidates.sort(key=get_best_score, reverse=True)
+            best_candidate = filtered_candidates[0]
+            
+            # Логика подтягивания пар (напарников)
+            wants = employees[best_candidate]["wants_with"]
+            partner_id = None
+            if wants:
+                if isinstance(wants, list):
+                    for p_id in wants:
+                        if p_id in available_ids and p_id not in assigned_operators:
+                            partner_id = p_id
+                            break
+                else:
+                    if wants in available_ids and wants not in assigned_operators:
+                        partner_id = wants
+
+            can_take_partner = False
+            if partner_id and len(final_distribution[line_num]) + 1 < required_count:
+                partner_conflict = False
+                for assigned_uid in final_distribution[line_num]:
+                    if check_relation(employees[partner_id]["does_not_want_with"], assigned_uid) or check_relation(employees[assigned_uid]["does_not_want_with"], partner_id):
+                        partner_conflict = True
+                        break
+                    if (partner_id, assigned_uid) in site_conflicts or (assigned_uid, partner_id) in site_conflicts:
+                        partner_conflict = True
+                        break
+                if check_relation(employees[partner_id]["does_not_want_with"], best_candidate) or check_relation(employees[best_candidate]["does_not_want_with"], partner_id):
+                    partner_conflict = True
+                if (partner_id, best_candidate) in site_conflicts or (best_candidate, partner_id) in site_conflicts:
+                    partner_conflict = True
+                    
+                if not partner_conflict:
+                    can_take_partner = True
+
+            if can_take_partner:
+                final_distribution[line_num].append(best_candidate)
+                final_distribution[line_num].append(partner_id)
+                assigned_operators.add(best_candidate)
+                assigned_operators.add(partner_id)
+            else:
+                final_distribution[line_num].append(best_candidate)
+                assigned_operators.add(best_candidate)
+                
+    return final_distribution, available_ids, assigned_operators
+
 
 # ==============================================================================
 # 5. ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ НА САЙТЕ
 # ==============================================================================
 if start_calculation:
-    final_dist, av_ids, assigned_ops = run_smart_distribution()
+    final_dist, av_ids, assigned_ops = run_distribution()
     st.success("🎉 Распределение успешно завершено методом глобальной оптимизации!")
     
     cols = st.columns(5)
