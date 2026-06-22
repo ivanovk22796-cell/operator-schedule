@@ -28,19 +28,6 @@ employees = {
 
 LINE_PRIORITIES = {1: 50, 2: 40, 3: 30, 4: 20, 5: 10}
 
-def check_relation(relation_value, target_id):
-    if relation_value is None:
-        return False
-    if isinstance(relation_value, list):
-        return target_id in relation_value
-    return relation_value == target_id
-
-# Вычисление списка ID отсутствующих по их именам
-ABSENT_EMPLOYEES = []
-for uid, info in employees.items():
-    if info["name"] in absent_names:
-        ABSENT_EMPLOYEES.append(uid)
-
 
 # ==============================================================================
 # 3. ВИЗУАЛЬНЫЙ ИНТЕРФЕЙС САЙТА
