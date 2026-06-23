@@ -12,7 +12,7 @@ employees = {
     5: {"name": "Кестер А.", "role": "старший", "wants_with": None, "does_not_want_with": None},
     6: {"name": "Курган М.", "role": "старший", "wants_with": None, "does_not_want_with": [3, 4, 12, 15, 11]},
     7: {"name": "Мазепа С.", "role": "старший", "wants_with": 8, "does_not_want_with": None},
-    8: {"name": "Пашков Б.", "role": "старший", "wants_with": 7, "does_not_want_with": None},
+    8: {"name": "Пашков Б.", "role": "старший", "wants_with": [1, 2, 6, 7, 11], "does_not_want_with": [5, 10, 13, 17]},
     9: {"name": "Пегова О.", "role": "старший", "wants_with": [1, 2, 3, 6, 7, 8, 12, 14], "does_not_want_with": [4, 10, 11, 15]},
     10: {"name": "Петров Д.", "role": "оператор", "wants_with": None, "does_not_want_with": [4, 15]},
     11: {"name": "Попов В.", "role": "старший", "wants_with": [1, 2, 7, 8, 16], "does_not_want_with": [3, 4, 6, 10, 12, 14, 15]},
