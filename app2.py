@@ -13,7 +13,7 @@ employees = {
     6: {"name": "Курган М.", "role": "старший", "wants_with": None, "does_not_want_with": [3, 4, 12, 15, 11]},
     7: {"name": "Мазепа С.", "role": "старший", "wants_with": 8, "does_not_want_with": None},
     8: {"name": "Пашков Б.", "role": "старший", "wants_with": 7, "does_not_want_with": None},
-    9: {"name": "Пегова О.", "role": "старший", "wants_with": None, "does_not_want_with": None},
+    9: {"name": "Пегова О.", "role": "старший", "wants_with": [1, 2, 3, 6, 7, 8, 12, 14], "does_not_want_with": [4, 10, 11, 15]},
     10: {"name": "Петров Д.", "role": "оператор", "wants_with": None, "does_not_want_with": [4, 15]},
     11: {"name": "Попов В.", "role": "старший", "wants_with": [1, 2, 7, 8, 16], "does_not_want_with": [3, 4, 6, 10, 12, 14, 15]},
     12: {"name": "Романкин П.", "role": "старший", "wants_with": [3, 4, 15], "does_not_want_with": None},
@@ -21,7 +21,7 @@ employees = {
     14: {"name": "Соколова Ю.", "role": "старший", "wants_with": [1, 2, 6, 7, 8, 9, 17], "does_not_want_with": [11, 15]},
     15: {"name": "Царегородцева Е.", "role": "оператор", "wants_with": [3, 4, 12], "does_not_want_with": None},
     16: {"name": "Чернов Г.", "role": "старший", "wants_with": None, "does_not_want_with": None},
-    17: {"name": "Чубаров С.", "role": "оператор", "wants_with": 18, "does_not_want_with": [10, 11]},
+    17: {"name": "Чубаров С.", "role": "оператор", "wants_with": [1, 2, 7, 8, 9, 16, 18], "does_not_want_with": [5, 10, 11, 14]},
     #18: {"name": "Загуменнов Д.", "role": "оператор", "wants_with": 17, "does_not_want_with": None}
 }
 
